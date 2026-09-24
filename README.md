@@ -8,6 +8,18 @@ Official TypeScript/JavaScript SDK for [RechnungsAPI](https://rechnungsapi.de) �
 npm install rechnungsapi-sdk
 ```
 
+## Get an API token
+
+Every request needs your own Bearer token — there's no shared or default token.
+
+1. Sign in to the dashboard at [rechnungsapi.de](https://rechnungsapi.de) (sign up if you don't have an account yet).
+2. Open your **Profile** page and copy the API token at the bottom.
+3. Store it as an environment variable — never hardcode it or commit it to source control:
+   ```bash
+   # .env
+   RECHNUNGSAPI_TOKEN=your-token-here
+   ```
+
 ## Usage
 
 ```ts
@@ -31,7 +43,14 @@ if (!validation.isValid) {
 const extracted = await client.analyzePdfInvoiceV2(pdfBase64, /* withLineItems */ true)
 ```
 
-Get your API token from the [RechnungsAPI dashboard](https://rechnungsapi.de).
+By default the client talks to the production gateway. To test against a sandbox instead (if your account has one), pass `baseUrl`:
+
+```ts
+const client = new RechnungsApiClient({
+  apiToken: process.env.RECHNUNGSAPI_TOKEN!,
+  baseUrl: "https://your-gateway.example.com",
+})
+```
 
 ## API
 
