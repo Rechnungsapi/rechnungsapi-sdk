@@ -1,6 +1,6 @@
 {
   "name": "rechnungsapi-sdk",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Official TypeScript/JavaScript SDK for RechnungsAPI — create, validate, and analyze ZUGFeRD and X-Invoice e-invoices.",
   "license": "MIT",
   "author": "RechnungsAPI <support@rechnungsapi.de>",
@@ -11,15 +11,22 @@
   },
   "keywords": ["rechnungsapi", "zugferd", "xinvoice", "xrechnung", "e-invoice", "invoice"],
   "type": "module",
+  "sideEffects": false,
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "files": ["dist", "README.md", "LICENSE"],
   "scripts": {

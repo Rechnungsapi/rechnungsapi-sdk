@@ -43,7 +43,7 @@ if (!validation.isValid) {
 const extracted = await client.analyzePdfInvoiceV2(pdfBase64, /* withLineItems */ true)
 ```
 
-By default the client talks to the production gateway. To test against a sandbox instead (if your account has one), pass `baseUrl`:
+By default the client talks to the production gateway (`https://api.rechnungsapi.de`). To point it at a different gateway, pass `baseUrl`:
 
 ```ts
 const client = new RechnungsApiClient({
