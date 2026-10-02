@@ -1,6 +1,10 @@
 # rechnungsapi-sdk
 
-Official TypeScript/JavaScript SDK for [RechnungsAPI](https://rechnungsapi.de) — create, validate, and analyze ZUGFeRD (PDF/A-3) and X-Invoice (XRechnung/UBL) e-invoices.
+The official TypeScript/JavaScript SDK for **[RechnungsAPI](https://rechnungsapi.de)** — the ZUGFeRD & XRechnung API from [rechnungsapi.de](https://rechnungsapi.de). Create e-invoices from JSON, validate them, extract the data from PDFs and scans, and send them by email, all from your own code.
+
+RechnungsAPI is operated by RechnungsAPI. This SDK talks to **rechnungsapi.de** only, so you need a RechnungsAPI account and API token to use it.
+
+[Website](https://rechnungsapi.de) · [API documentation](https://rechnungsapi.de/api-docs) · [MCP server for AI agents](https://www.npmjs.com/package/rechnungsapi-mcp) · [Support](mailto:support@rechnungsapi.de)
 
 ## Install
 
@@ -47,8 +51,8 @@ const result = await client.createZugferdFromJson(
   invoicePdfBase64,
 )
 
-// Validate an X-Invoice XML document
-const validation = await client.validateXInvoiceXml(xmlString)
+// Validate an XRechnung XML document
+const validation = await client.validateXRechnungXml(xmlString)
 if (!validation.isValid) {
   console.log(validation.messages)
 }
@@ -72,16 +76,16 @@ const client = new RechnungsApiClient({
 
 | Method | Description | API docs |
 |---|---|---|
-| `createZugferdFromJson(invoice, invoicePdf64, options?)` | Create a ZUGFeRD PDF/A-3 from structured invoice JSON | [createZugferdFromJson](https://rechnungsapi.de/api-docs#createZugferdFromJson) |
-| `createXInvoiceFromJson(invoice, options?)` | Create an X-Invoice (XRechnung/UBL) XML from structured invoice JSON | [createXinvoiceFromJson](https://rechnungsapi.de/api-docs#createXinvoiceFromJson) |
-| `createZugferdPdf(invoicePdf64, xInvoiceXml)` | Embed an existing X-Invoice XML into a visual PDF | [createZugferdPdfFromXinvoice](https://rechnungsapi.de/api-docs#createZugferdPdfFromXinvoice) |
-| `extractXInvoiceFromZugferd(zugferd64)` | Extract the embedded XRechnung XML from a ZUGFeRD PDF as JSON | [extractXinvoiceFromZugferdToJson](https://rechnungsapi.de/api-docs#extractXInvoiceFromZugferdToJson) |
-| `validateXInvoiceXml(xml)` | Validate an X-Invoice XML against schema and business rules | [validateXinvoiceXml](https://rechnungsapi.de/api-docs#validateXinvoiceXML) |
-| `validateZugferdPdf(zugferdFile64, options?)` | Validate a ZUGFeRD PDF's embedded XML | [validateZugferdPdf](https://rechnungsapi.de/api-docs#validateZugferdPdf) |
-| `analyzePdfInvoice(pdfBase64)` | Extract structured JSON from a PDF/scanned invoice (sync) | [createJSONFromAnalysedPdf](https://rechnungsapi.de/api-docs#createJSONFromAnalysedPdf) |
-| `analyzePdfInvoiceV2(pdfBase64, withLineItems?)` | High-accuracy analyzer, optional line-item extraction | [createJSONFromAnalysedPdf (v2)](https://rechnungsapi.de/api-docs#createJSONFromAnalysedPdfV2) |
+| `createZugferdFromJson(invoice, invoicePdf64, options?)` | Create a ZUGFeRD PDF/A-3 from structured invoice JSON | [docs](https://rechnungsapi.de/api-docs#createZugferdFromJson) |
+| `createXRechnungFromJson(invoice, options?)` | Create an XRechnung XML from structured invoice JSON | [docs](https://rechnungsapi.de/api-docs#createXinvoiceFromJson) |
+| `createZugferdPdf(invoicePdf64, xrechnungXml)` | Embed an existing XRechnung XML into a visual PDF | [docs](https://rechnungsapi.de/api-docs#createZugferdPdfFromXinvoice) |
+| `extractXRechnungFromZugferd(zugferd64)` | Extract the embedded XRechnung XML from a ZUGFeRD PDF as JSON | [docs](https://rechnungsapi.de/api-docs#extractXInvoiceFromZugferdToJson) |
+| `validateXRechnungXml(xml)` | Validate an XRechnung XML against schema and business rules | [docs](https://rechnungsapi.de/api-docs#validateXinvoiceXML) |
+| `validateZugferdPdf(zugferdFile64, options?)` | Validate a ZUGFeRD PDF's embedded XML | [docs](https://rechnungsapi.de/api-docs#validateZugferdPdf) |
+| `analyzePdfInvoice(pdfBase64)` | Extract structured JSON from a PDF/scanned invoice (sync) | [docs](https://rechnungsapi.de/api-docs#createJSONFromAnalysedPdf) |
+| `analyzePdfInvoiceV2(pdfBase64, withLineItems?)` | High-accuracy analyzer, optional line-item extraction | [docs](https://rechnungsapi.de/api-docs#createJSONFromAnalysedPdfV2) |
 | `analyzePdfInvoiceAsync(pdfBase64, withLineItems?)` / `getAnalysisStatus(jobId)` | Async analysis for large files | [submit](https://rechnungsapi.de/api-docs#createJSONFromAnalysedPdfAsync) / [status](https://rechnungsapi.de/api-docs#rechnungsapiInvoiceAsyncStatus) |
-| `createZugferdFromPdf(pdfBase64, fileName?)` | Convert a PDF/scan directly into a validated ZUGFeRD PDF | [createZugferdFromPdf](https://rechnungsapi.de/api-docs#createZugferdFromPdf) |
+| `createZugferdFromPdf(pdfBase64, fileName?)` | Convert a PDF/scan directly into a validated ZUGFeRD PDF | [docs](https://rechnungsapi.de/api-docs#createZugferdFromPdf) |
 
 Errors are thrown as `RechnungsApiError` (with `.status` and `.body`), or `ValidationFailedError` for HTTP 412 responses (missing mandatory invoice fields). What each status code means is described under [Errors](https://rechnungsapi.de/api-docs#errors) in the API documentation.
 
@@ -95,4 +99,4 @@ yarn build
 
 ## License
 
-MIT
+MIT © RechnungsAPI · [rechnungsapi.de](https://rechnungsapi.de) · support@rechnungsapi.de

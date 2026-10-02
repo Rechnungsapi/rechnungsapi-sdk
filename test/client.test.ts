@@ -42,7 +42,7 @@ describe("RechnungsApiClient", () => {
     fetchMock.mockResolvedValueOnce(jsonResponse({ success: true }))
     const client = new RechnungsApiClient({ apiToken: "t", fetch: fetchMock as any })
 
-    await client.createXInvoiceFromJson({ invoiceNumber: "RE-2" }, { transport: { method: "email" } })
+    await client.createXRechnungFromJson({ invoiceNumber: "RE-2" }, { transport: { method: "email" } })
 
     const [, init] = fetchMock.mock.calls[0]
     expect(JSON.parse(init.body)).toEqual({
@@ -51,13 +51,13 @@ describe("RechnungsApiClient", () => {
     })
   })
 
-  it("normalizes the X-Invoice validation response shape", async () => {
+  it("normalizes the XRechnung validation response shape", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({ valid: true, xInvoiceErrors: [{ message: "warn", type: "warning" }] }),
     )
     const client = new RechnungsApiClient({ apiToken: "t", fetch: fetchMock as any })
 
-    const result = await client.validateXInvoiceXml("<CrossIndustryInvoice/>")
+    const result = await client.validateXRechnungXml("<CrossIndustryInvoice/>")
 
     expect(result.isValid).toBe(true)
     expect(result.messages).toHaveLength(1)

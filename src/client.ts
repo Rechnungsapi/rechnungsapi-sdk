@@ -5,7 +5,7 @@ import type {
   CreateOptions,
   InvoiceJson,
   ValidateZugferdPdfOptions,
-  XInvoiceValidationResult,
+  XRechnungValidationResult,
   ZugferdFromPdfResult,
 } from "./types.js"
 
@@ -37,8 +37,11 @@ function failureReason(data: any): string | undefined {
 }
 
 /**
- * Client for the RechnungsAPI e-invoicing gateway: create, validate, and
- * analyze ZUGFeRD (PDF/A-3) and X-Invoice (XRechnung/UBL) documents.
+ * Client for RechnungsAPI (rechnungsapi.de), the ZUGFeRD & XRechnung API: create,
+ * validate, and analyze ZUGFeRD (PDF/A-3) and XRechnung documents.
+ *
+ * Request and response field names such as `xinvoiceXML`, `xInvoiceXml` and `xInvoiceErrors` are
+ * part of the gateway's public contract and are sent and read exactly as the API documents them.
  */
 export class RechnungsApiClient {
   private readonly apiToken: string
@@ -69,28 +72,28 @@ export class RechnungsApiClient {
     })
   }
 
-  /** Create an X-Invoice (XRechnung/UBL) XML from structured invoice JSON. */
-  async createXInvoiceFromJson(invoice: InvoiceJson, options: CreateOptions = {}): Promise<unknown> {
+  /** Create an XRechnung XML from structured invoice JSON. */
+  async createXRechnungFromJson(invoice: InvoiceJson, options: CreateOptions = {}): Promise<unknown> {
     return this.callGateway("api/v1/zugferd/createXinvoiceFromJson", {
       invoice,
       ...(options.transport ? { transport: options.transport } : {}),
     })
   }
 
-  /** Embed an existing X-Invoice XML into a visual PDF to produce a ZUGFeRD PDF. */
-  async createZugferdPdf(invoicePdf64: string, xInvoiceXml: string): Promise<unknown> {
-    return this.callGateway("api/v1/zugferd/createZugferdPdfFromXinvoice", { invoicePdf64, xInvoiceXml })
+  /** Embed an existing XRechnung XML into a visual PDF to produce a ZUGFeRD PDF. */
+  async createZugferdPdf(invoicePdf64: string, xrechnungXml: string): Promise<unknown> {
+    return this.callGateway("api/v1/zugferd/createZugferdPdfFromXinvoice", { invoicePdf64, xInvoiceXml: xrechnungXml })
   }
 
   /** Extract the embedded XRechnung XML from a ZUGFeRD PDF as structured JSON. */
-  async extractXInvoiceFromZugferd(zugferd64: string): Promise<unknown> {
+  async extractXRechnungFromZugferd(zugferd64: string): Promise<unknown> {
     return this.callGateway("api/v1/zugferd/extractXinvoiceFromZugferdToJson", { zugferd64 })
   }
 
-  /** Validate an X-Invoice XML document against the XRechnung/UBL schema and business rules. */
-  async validateXInvoiceXml(xinvoiceXML: string): Promise<XInvoiceValidationResult> {
+  /** Validate an XRechnung XML document against the schema and business rules. */
+  async validateXRechnungXml(xrechnungXml: string): Promise<XRechnungValidationResult> {
     const result = (await this.callGateway("api/v1/zugferd/validateXinvoiceXml", {
-      xinvoiceXML,
+      xinvoiceXML: xrechnungXml,
     })) as any
 
     return {
@@ -192,6 +195,25 @@ export class RechnungsApiClient {
       }
     }
     return { ok: false, status: response.status, body }
+  }
+
+  // --- Deprecated names -----------------------------------------------------------------------
+  // 0.1.0 and 0.1.1 shipped these names, and published versions of rechnungsapi-mcp call them,
+  // so they stay as thin aliases. New code should use the XRechnung names above.
+
+  /** @deprecated Renamed to {@link createXRechnungFromJson}. */
+  createXInvoiceFromJson(invoice: InvoiceJson, options: CreateOptions = {}): Promise<unknown> {
+    return this.createXRechnungFromJson(invoice, options)
+  }
+
+  /** @deprecated Renamed to {@link extractXRechnungFromZugferd}. */
+  extractXInvoiceFromZugferd(zugferd64: string): Promise<unknown> {
+    return this.extractXRechnungFromZugferd(zugferd64)
+  }
+
+  /** @deprecated Renamed to {@link validateXRechnungXml}. */
+  validateXInvoiceXml(xml: string): Promise<XRechnungValidationResult> {
+    return this.validateXRechnungXml(xml)
   }
 
   private authHeaders(): Record<string, string> {

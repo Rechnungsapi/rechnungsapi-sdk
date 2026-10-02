@@ -12,5 +12,7 @@ export type {
   ValidateZugferdPdfOptions,
   XInvoiceValidationMessage,
   XInvoiceValidationResult,
+  XRechnungValidationMessage,
+  XRechnungValidationResult,
   ZugferdFromPdfResult,
 } from "./types.js"

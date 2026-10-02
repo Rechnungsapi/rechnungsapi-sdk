@@ -39,10 +39,10 @@ type Case = { name: string; call: (c: RechnungsApiClient) => Promise<unknown>; u
 const endpointCases: Case[] = [
   { name: "createZugferdFromJson", call: (c) => c.createZugferdFromJson({ n: 1 }, "pdf64"), url: `${GATEWAY}/createZugferdFromJson`, body: { invoice: { n: 1 }, invoicePdf64: "pdf64" } },
   { name: "createZugferdFromJson with transport", call: (c) => c.createZugferdFromJson({ n: 1 }, "pdf64", { transport: { to: "a@b.c" } }), url: `${GATEWAY}/createZugferdFromJson`, body: { invoice: { n: 1 }, invoicePdf64: "pdf64", transport: { to: "a@b.c" } } },
-  { name: "createXInvoiceFromJson", call: (c) => c.createXInvoiceFromJson({ n: 1 }), url: `${GATEWAY}/createXinvoiceFromJson`, body: { invoice: { n: 1 } } },
+  { name: "createXRechnungFromJson", call: (c) => c.createXRechnungFromJson({ n: 1 }), url: `${GATEWAY}/createXinvoiceFromJson`, body: { invoice: { n: 1 } } },
   { name: "createZugferdPdf", call: (c) => c.createZugferdPdf("pdf64", "<x/>"), url: `${GATEWAY}/createZugferdPdfFromXinvoice`, body: { invoicePdf64: "pdf64", xInvoiceXml: "<x/>" } },
-  { name: "extractXInvoiceFromZugferd", call: (c) => c.extractXInvoiceFromZugferd("z64"), url: `${GATEWAY}/extractXinvoiceFromZugferdToJson`, body: { zugferd64: "z64" } },
-  { name: "validateXInvoiceXml", call: (c) => c.validateXInvoiceXml("<x/>"), url: `${GATEWAY}/validateXinvoiceXml`, body: { xinvoiceXML: "<x/>" } },
+  { name: "extractXRechnungFromZugferd", call: (c) => c.extractXRechnungFromZugferd("z64"), url: `${GATEWAY}/extractXinvoiceFromZugferdToJson`, body: { zugferd64: "z64" } },
+  { name: "validateXRechnungXml", call: (c) => c.validateXRechnungXml("<x/>"), url: `${GATEWAY}/validateXinvoiceXml`, body: { xinvoiceXML: "<x/>" } },
   { name: "validateZugferdPdf", call: (c) => c.validateZugferdPdf("z64"), url: `${GATEWAY}/validateZugferdPdf`, body: { zugferdFile64: "z64", comparePDF2XML: false } },
   { name: "validateZugferdPdf with comparePDF2XML", call: (c) => c.validateZugferdPdf("z64", { comparePDF2XML: true }), url: `${GATEWAY}/validateZugferdPdf`, body: { zugferdFile64: "z64", comparePDF2XML: true } },
   { name: "analyzePdfInvoice (v1, gateway host)", call: (c) => c.analyzePdfInvoice("p64"), url: `${GATEWAY}/createJSONFromAnalysedPdf`, body: { pdfInvoiceBase64: "p64" } },
@@ -119,14 +119,14 @@ describe("successful responses that are not JSON", () => {
 
   it("a plain-text 200 body resolves to { success: true } too", async () => {
     const { client } = setup(new Response("OK", { status: 200, headers: { "content-type": "text/plain" } }))
-    await expect(client.createXInvoiceFromJson({})).resolves.toEqual({ success: true })
+    await expect(client.createXRechnungFromJson({})).resolves.toEqual({ success: true })
   })
 })
 
 describe("failures", () => {
   it("keeps the server's message, status and parsed body", async () => {
     const { client } = setup(json({ message: "Invalid token.", error: "x" }, { status: 401 }))
-    const err = await client.validateXInvoiceXml("<x/>").catch((e) => e)
+    const err = await client.validateXRechnungXml("<x/>").catch((e) => e)
     expect(err).toBeInstanceOf(RechnungsApiError)
     expect(err.status).toBe(401)
     expect(err.message).toBe("Invalid token.")
@@ -135,7 +135,7 @@ describe("failures", () => {
 
   it("uses the gateway's `error` string when there is no `message` (what a rejected token really returns)", async () => {
     const { client } = setup(json({ error: "Invalid token." }, { status: 401 }))
-    const err = await client.validateXInvoiceXml("<x/>").catch((e) => e)
+    const err = await client.validateXRechnungXml("<x/>").catch((e) => e)
     expect(err).toBeInstanceOf(RechnungsApiError)
     expect(err.message).toBe("Invalid token.")
     expect(err.status).toBe(401)
@@ -153,7 +153,7 @@ describe("failures", () => {
     const status = setup(json({ error: "job store unavailable" }, { status: 500 }))
     expect((await status.client.getAnalysisStatus("j").catch((e) => e)).message).toBe("job store unavailable")
     const missing = setup(json({ error: "invoice incomplete", noOfMissingData: 1, errorlist: ["x"] }, { status: 412 }))
-    const err = await missing.client.createXInvoiceFromJson({}).catch((e) => e)
+    const err = await missing.client.createXRechnungFromJson({}).catch((e) => e)
     expect(err).toBeInstanceOf(ValidationFailedError)
     expect(err.message).toBe("invoice incomplete")
   })
@@ -200,27 +200,56 @@ describe("failures", () => {
         throw new TypeError("network down")
       }) as unknown as typeof fetch,
     })
-    await expect(client.validateXInvoiceXml("<x/>")).rejects.toThrow("network down")
+    await expect(client.validateXRechnungXml("<x/>")).rejects.toThrow("network down")
   })
 
   it("never leaks the token into an error's message or body", async () => {
     const { client } = setup(json({ message: "nope" }, { status: 403 }), { apiToken: "tok_SECRET_VALUE" })
-    const err = await client.validateXInvoiceXml("<x/>").catch((e) => e)
+    const err = await client.validateXRechnungXml("<x/>").catch((e) => e)
     expect(`${err.message} ${JSON.stringify(err.body)} ${String(err.stack).split("\n")[0]}`).not.toContain("tok_SECRET_VALUE")
   })
 })
 
-describe("validateXInvoiceXml response normalisation", () => {
+describe("names used by 0.1.0 and 0.1.1 keep working", () => {
+  // Published versions of rechnungsapi-mcp call these, and their dependency range lets them pick up
+  // newer SDK releases, so the aliases must keep sending exactly what the new names send.
+  type Call = (c: RechnungsApiClient) => Promise<unknown>
+  const pairs: Array<[string, Call, Call]> = [
+    ["createXInvoiceFromJson", (c) => c.createXInvoiceFromJson({ n: 1 }, { transport: { to: "a@b.c" } }), (c) => c.createXRechnungFromJson({ n: 1 }, { transport: { to: "a@b.c" } })],
+    ["extractXInvoiceFromZugferd", (c) => c.extractXInvoiceFromZugferd("z64"), (c) => c.extractXRechnungFromZugferd("z64")],
+    ["validateXInvoiceXml", (c) => c.validateXInvoiceXml("<x/>"), (c) => c.validateXRechnungXml("<x/>")],
+  ]
+
+  it.each(pairs)("%s sends exactly what its XRechnung-named replacement sends", async (_name, oldCall, newCall) => {
+    const a = setup(json({ valid: true }))
+    await oldCall(a.client)
+    const b = setup(json({ valid: true }))
+    await newCall(b.client)
+    expect(a.last().url).toBe(b.last().url)
+    expect(a.last().init.method).toBe(b.last().init.method)
+    expect(a.last().body).toEqual(b.last().body)
+  })
+
+  it("validateXInvoiceXml still returns the normalised result", async () => {
+    const { client } = setup(json({ valid: true, xInvoiceErrors: [{ message: "warn", type: "warning" }] }))
+    const res = await client.validateXInvoiceXml("<x/>")
+    expect(res.isValid).toBe(true)
+    expect(res.messages).toHaveLength(1)
+    expect(res.details.xInvoiceErrors).toHaveLength(1)
+  })
+})
+
+describe("validateXRechnungXml response normalisation", () => {
   it("reads isValid directly and the `errors` alias", async () => {
     const { client } = setup(json({ isValid: true, errors: [{ message: "m" }] }))
-    const res = await client.validateXInvoiceXml("<x/>")
+    const res = await client.validateXRechnungXml("<x/>")
     expect(res.isValid).toBe(true)
     expect(res.messages).toHaveLength(1)
   })
 
   it("treats a response with no validity flag as invalid", async () => {
     const { client } = setup(json({ message: "done" }))
-    const res = await client.validateXInvoiceXml("<x/>")
+    const res = await client.validateXRechnungXml("<x/>")
     expect(res.isValid).toBe(false)
     expect(res.messages).toEqual([])
   })

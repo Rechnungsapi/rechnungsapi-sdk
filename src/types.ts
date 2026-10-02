@@ -1,4 +1,4 @@
-/** Free-form invoice payload as accepted by the ZUGFeRD/X-Invoice endpoints. */
+/** Free-form invoice payload as accepted by the ZUGFeRD and XRechnung endpoints. */
 export type InvoiceJson = Record<string, unknown>
 
 /** Optional transport metadata (e.g. email delivery) accepted by the create endpoints. */
@@ -13,7 +13,7 @@ export interface ValidateZugferdPdfOptions {
   comparePDF2XML?: boolean
 }
 
-export interface XInvoiceValidationMessage {
+export interface XRechnungValidationMessage {
   type: string
   message: string
   location: string
@@ -22,12 +22,18 @@ export interface XInvoiceValidationMessage {
   line: string
 }
 
-export interface XInvoiceValidationResult {
+export interface XRechnungValidationResult {
   isValid: boolean
   message: string
-  messages: XInvoiceValidationMessage[]
+  messages: XRechnungValidationMessage[]
   details: Record<string, unknown>
 }
+
+/** @deprecated Renamed to {@link XRechnungValidationMessage}. */
+export type XInvoiceValidationMessage = XRechnungValidationMessage
+
+/** @deprecated Renamed to {@link XRechnungValidationResult}. */
+export type XInvoiceValidationResult = XRechnungValidationResult
 
 export interface AsyncPdfSubmitResult {
   job_id: string
