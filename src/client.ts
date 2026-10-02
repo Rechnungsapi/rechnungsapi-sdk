@@ -37,7 +37,7 @@ export class RechnungsApiClient {
 
   constructor(options: RechnungsApiClientOptions) {
     if (!options.apiToken) {
-      throw new Error("RechnungsApiClient requires an apiToken")
+      throw new Error("RechnungsApiClient requires an apiToken (see https://rechnungsapi.de/api-docs#authentication)")
     }
     this.apiToken = options.apiToken
     this.baseUrl = withTrailingSlash(options.baseUrl ?? DEFAULT_BASE_URL)
@@ -68,7 +68,7 @@ export class RechnungsApiClient {
 
   /** Embed an existing X-Invoice XML into a visual PDF to produce a ZUGFeRD PDF. */
   async createZugferdPdf(invoicePdf64: string, xInvoiceXml: string): Promise<unknown> {
-    return this.callGateway("api/v1/zugferd/createZugferdPdf", { invoicePdf64, xInvoiceXml })
+    return this.callGateway("api/v1/zugferd/createZugferdPdfFromXinvoice", { invoicePdf64, xInvoiceXml })
   }
 
   /** Extract the embedded XRechnung XML from a ZUGFeRD PDF as structured JSON. */

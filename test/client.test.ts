@@ -107,7 +107,7 @@ describe("RechnungsApiClient", () => {
     await client.createZugferdPdf("pdf64", "<xml/>")
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://your-gateway.example.com/api/v1/zugferd/createZugferdPdf",
+      "https://your-gateway.example.com/api/v1/zugferd/createZugferdPdfFromXinvoice",
       expect.anything(),
     )
   })

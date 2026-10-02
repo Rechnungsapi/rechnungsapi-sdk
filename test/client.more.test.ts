@@ -33,11 +33,14 @@ function setup(respond: Response, options: Partial<RechnungsApiClientOptions> = 
 
 type Case = { name: string; call: (c: RechnungsApiClient) => Promise<unknown>; url: string; body: unknown }
 
+// These routes are the ones published at https://rechnungsapi.de/api-docs. Take them from there,
+// not from the web app's internal API list: the public gateway doesn't expose every internal route
+// (e.g. it serves createZugferdPdfFromXinvoice, not createZugferdPdf).
 const endpointCases: Case[] = [
   { name: "createZugferdFromJson", call: (c) => c.createZugferdFromJson({ n: 1 }, "pdf64"), url: `${GATEWAY}/createZugferdFromJson`, body: { invoice: { n: 1 }, invoicePdf64: "pdf64" } },
   { name: "createZugferdFromJson with transport", call: (c) => c.createZugferdFromJson({ n: 1 }, "pdf64", { transport: { to: "a@b.c" } }), url: `${GATEWAY}/createZugferdFromJson`, body: { invoice: { n: 1 }, invoicePdf64: "pdf64", transport: { to: "a@b.c" } } },
   { name: "createXInvoiceFromJson", call: (c) => c.createXInvoiceFromJson({ n: 1 }), url: `${GATEWAY}/createXinvoiceFromJson`, body: { invoice: { n: 1 } } },
-  { name: "createZugferdPdf", call: (c) => c.createZugferdPdf("pdf64", "<x/>"), url: `${GATEWAY}/createZugferdPdf`, body: { invoicePdf64: "pdf64", xInvoiceXml: "<x/>" } },
+  { name: "createZugferdPdf", call: (c) => c.createZugferdPdf("pdf64", "<x/>"), url: `${GATEWAY}/createZugferdPdfFromXinvoice`, body: { invoicePdf64: "pdf64", xInvoiceXml: "<x/>" } },
   { name: "extractXInvoiceFromZugferd", call: (c) => c.extractXInvoiceFromZugferd("z64"), url: `${GATEWAY}/extractXinvoiceFromZugferdToJson`, body: { zugferd64: "z64" } },
   { name: "validateXInvoiceXml", call: (c) => c.validateXInvoiceXml("<x/>"), url: `${GATEWAY}/validateXinvoiceXml`, body: { xinvoiceXML: "<x/>" } },
   { name: "validateZugferdPdf", call: (c) => c.validateZugferdPdf("z64"), url: `${GATEWAY}/validateZugferdPdf`, body: { zugferdFile64: "z64", comparePDF2XML: false } },
@@ -88,7 +91,7 @@ describe("URL handling", () => {
   it.each(["https://gw.example.com", "https://gw.example.com/"])("baseUrl %s gives exactly one slash before the path", async (baseUrl) => {
     const { client, last } = setup(json({}), { baseUrl })
     await client.createZugferdPdf("p", "<x/>")
-    expect(last().url).toBe("https://gw.example.com/api/v1/zugferd/createZugferdPdf")
+    expect(last().url).toBe("https://gw.example.com/api/v1/zugferd/createZugferdPdfFromXinvoice")
   })
 
   it.each(["https://v2.example.com", "https://v2.example.com/", "https://v2.example.com///"])("v2BaseUrl %s never produces a double slash", async (v2BaseUrl) => {
