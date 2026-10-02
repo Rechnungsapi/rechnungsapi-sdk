@@ -133,6 +133,39 @@ describe("failures", () => {
     expect(err.body).toEqual({ message: "Invalid token.", error: "x" })
   })
 
+  it("uses the gateway's `error` string when there is no `message` (what a rejected token really returns)", async () => {
+    const { client } = setup(json({ error: "Invalid token." }, { status: 401 }))
+    const err = await client.validateXInvoiceXml("<x/>").catch((e) => e)
+    expect(err).toBeInstanceOf(RechnungsApiError)
+    expect(err.message).toBe("Invalid token.")
+    expect(err.status).toBe(401)
+    expect(err.body).toEqual({ error: "Invalid token." })
+  })
+
+  it("uses `error.userMessage` from the v2 envelope", async () => {
+    const { client } = setup(json({ success: false, error: { code: "UNAUTHORIZED", userMessage: "Zugriff nicht möglich" } }, { status: 403 }))
+    const err = await client.analyzePdfInvoiceV2("p").catch((e) => e)
+    expect(err.message).toBe("Zugriff nicht möglich")
+    expect(err.status).toBe(403)
+  })
+
+  it("reports the reason for a failed status check and for a 412 without a message", async () => {
+    const status = setup(json({ error: "job store unavailable" }, { status: 500 }))
+    expect((await status.client.getAnalysisStatus("j").catch((e) => e)).message).toBe("job store unavailable")
+    const missing = setup(json({ error: "invoice incomplete", noOfMissingData: 1, errorlist: ["x"] }, { status: 412 }))
+    const err = await missing.client.createXInvoiceFromJson({}).catch((e) => e)
+    expect(err).toBeInstanceOf(ValidationFailedError)
+    expect(err.message).toBe("invoice incomplete")
+  })
+
+  it("ignores empty or non-string reasons and falls back to the generic message", async () => {
+    for (const body of [{ message: "", error: {} }, { message: "   " }, { error: 42 }, { error: { code: "X" } }]) {
+      const { client } = setup(json(body, { status: 500 }))
+      const err = await client.createZugferdPdf("p", "<x/>").catch((e) => e)
+      expect(err.message).toBe("API request failed with status: 500")
+    }
+  })
+
   it("falls back to a generic message when the failure body is not JSON", async () => {
     const { client } = setup(new Response("<html>Bad Gateway</html>", { status: 502 }))
     const err = await client.createZugferdPdf("p", "<x/>").catch((e) => e)

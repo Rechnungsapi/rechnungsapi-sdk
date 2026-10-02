@@ -26,6 +26,17 @@ const DEFAULT_V2_BASE_URL = "https://api.v2.rechnungsapi.de"
 const withTrailingSlash = (url: string) => (url.endsWith("/") ? url : `${url}/`)
 
 /**
+ * The reason an API failure body gives, if any. The gateways answer with `{ message }`,
+ * `{ error: "Invalid token." }`, or the v2 envelope `{ error: { userMessage } }`.
+ */
+function failureReason(data: any): string | undefined {
+  for (const candidate of [data?.message, data?.error, data?.error?.userMessage]) {
+    if (typeof candidate === "string" && candidate.trim()) return candidate
+  }
+  return undefined
+}
+
+/**
  * Client for the RechnungsAPI e-invoicing gateway: create, validate, and
  * analyze ZUGFeRD (PDF/A-3) and X-Invoice (XRechnung/UBL) documents.
  */
@@ -133,7 +144,7 @@ export class RechnungsApiClient {
     )
     const data = await this.safeJson(response)
     if (!response.ok) {
-      throw new RechnungsApiError(data?.message ?? `Status check failed with status ${response.status}`, response.status, data)
+      throw new RechnungsApiError(failureReason(data) ?? `Status check failed with status ${response.status}`, response.status, data)
     }
     return data as AsyncPdfStatusResult
   }
@@ -222,11 +233,11 @@ export class RechnungsApiClient {
     const data = await this.safeJson(response)
 
     if (response.status === 412) {
-      throw new ValidationFailedError(data?.message ?? "Data validation failed", data ?? {})
+      throw new ValidationFailedError(failureReason(data) ?? "Data validation failed", data ?? {})
     }
 
     throw new RechnungsApiError(
-      data?.message ?? `API request failed with status: ${response.status}`,
+      failureReason(data) ?? `API request failed with status: ${response.status}`,
       response.status,
       data,
     )
