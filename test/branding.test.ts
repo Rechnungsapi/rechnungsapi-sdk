@@ -30,6 +30,12 @@ describe("this package presents itself as RechnungsAPI (rechnungsapi.de)", () =>
     expect(readme).toContain("support@rechnungsapi.de")
   })
 
+  it("does not name a company or legal entity anywhere a reader can see", () => {
+    // The package is presented as RechnungsAPI (rechnungsapi.de) only.
+    const visible = [pkg.description, JSON.stringify(pkg.author), visibleText(readme), read("LICENSE")].join("\n")
+    expect(visible).not.toMatch(/\bGmbH\b/)
+  })
+
   it("keeps the term another vendor uses as its product name out of what readers see", () => {
     // "X-Invoice" / "xinvoice" is another company's brand. The gateway's own route and field names
     // (createXinvoiceFromJson, xinvoiceXML, ...) stay in the source because they are the API contract.

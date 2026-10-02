@@ -2,7 +2,7 @@
 
 The official TypeScript/JavaScript SDK for **[RechnungsAPI](https://rechnungsapi.de)** — the ZUGFeRD & XRechnung API from [rechnungsapi.de](https://rechnungsapi.de). Create e-invoices from JSON, validate them, extract the data from PDFs and scans, and send them by email, all from your own code.
 
-RechnungsAPI is operated by RechnungsAPI. This SDK talks to **rechnungsapi.de** only, so you need a RechnungsAPI account and API token to use it.
+This SDK talks to **rechnungsapi.de** only, so you need a RechnungsAPI account and API token to use it.
 
 [Website](https://rechnungsapi.de) · [API documentation](https://rechnungsapi.de/api-docs) · [MCP server for AI agents](https://www.npmjs.com/package/rechnungsapi-mcp) · [Support](mailto:support@rechnungsapi.de)
 
