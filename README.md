@@ -8,17 +8,31 @@ Official TypeScript/JavaScript SDK for [RechnungsAPI](https://rechnungsapi.de) �
 npm install rechnungsapi-sdk
 ```
 
+## Documentation
+
+The complete API reference — every endpoint with its request, response and error codes — is at **[rechnungsapi.de/api-docs](https://rechnungsapi.de/api-docs)** (English and German).
+
+- [Authentication](https://rechnungsapi.de/api-docs#authentication) — how the Bearer token is sent
+- [Quickstart](https://rechnungsapi.de/api-docs#quickstart) — your first call in under a minute
+- [Endpoints](https://rechnungsapi.de/api-docs#endpoints) — request and response of every endpoint
+- [Invoice object reference](https://rechnungsapi.de/api-docs#invoice-object) — all invoice fields (EN 16931 business terms)
+- [Email transport](https://rechnungsapi.de/api-docs#email-transport) — generate and send an invoice in one call
+- [Errors](https://rechnungsapi.de/api-docs#errors) — HTTP status codes and validation results
+- [MCP server & SDK](https://rechnungsapi.de/api-docs#mcp-sdk) — using RechnungsAPI from AI agents
+
 ## Get an API token
 
 Every request needs your own Bearer token — there's no shared or default token.
 
-1. Sign in to the dashboard at [rechnungsapi.de](https://rechnungsapi.de) (sign up if you don't have an account yet).
+1. [Sign in](https://rechnungsapi.de/login) to the RechnungsAPI dashboard ([sign up](https://rechnungsapi.de/register) if you don't have an account yet).
 2. Open your **Profile** page and copy the API token at the bottom.
 3. Store it as an environment variable — never hardcode it or commit it to source control:
    ```bash
    # .env
    RECHNUNGSAPI_TOKEN=your-token-here
    ```
+
+See [Authentication](https://rechnungsapi.de/api-docs#authentication) in the API documentation for how the token is sent.
 
 ## Usage
 
@@ -43,6 +57,8 @@ if (!validation.isValid) {
 const extracted = await client.analyzePdfInvoiceV2(pdfBase64, /* withLineItems */ true)
 ```
 
+The invoice objects you pass in follow EN 16931 — the [Invoice Object Reference](https://rechnungsapi.de/api-docs#invoice-object) lists every field and which ones are mandatory. To have a generated invoice emailed in the same call, pass a `transport` option (see [Email Transport](https://rechnungsapi.de/api-docs#email-transport)).
+
 By default the client talks to the production gateway (`https://api.rechnungsapi.de`). To point it at a different gateway, pass `baseUrl`:
 
 ```ts
@@ -54,20 +70,20 @@ const client = new RechnungsApiClient({
 
 ## API
 
-| Method | Description |
-|---|---|
-| `createZugferdFromJson(invoice, invoicePdf64, options?)` | Create a ZUGFeRD PDF/A-3 from structured invoice JSON |
-| `createXInvoiceFromJson(invoice, options?)` | Create an X-Invoice (XRechnung/UBL) XML from structured invoice JSON |
-| `createZugferdPdf(invoicePdf64, xInvoiceXml)` | Embed an existing X-Invoice XML into a visual PDF |
-| `extractXInvoiceFromZugferd(zugferd64)` | Extract the embedded XRechnung XML from a ZUGFeRD PDF as JSON |
-| `validateXInvoiceXml(xml)` | Validate an X-Invoice XML against schema and business rules |
-| `validateZugferdPdf(zugferdFile64, options?)` | Validate a ZUGFeRD PDF's embedded XML |
-| `analyzePdfInvoice(pdfBase64)` | Extract structured JSON from a PDF/scanned invoice (sync) |
-| `analyzePdfInvoiceV2(pdfBase64, withLineItems?)` | High-accuracy analyzer, optional line-item extraction |
-| `analyzePdfInvoiceAsync(pdfBase64, withLineItems?)` / `getAnalysisStatus(jobId)` | Async analysis for large files |
-| `createZugferdFromPdf(pdfBase64, fileName?)` | Convert a PDF/scan directly into a validated ZUGFeRD PDF |
+| Method | Description | API docs |
+|---|---|---|
+| `createZugferdFromJson(invoice, invoicePdf64, options?)` | Create a ZUGFeRD PDF/A-3 from structured invoice JSON | [createZugferdFromJson](https://rechnungsapi.de/api-docs#createZugferdFromJson) |
+| `createXInvoiceFromJson(invoice, options?)` | Create an X-Invoice (XRechnung/UBL) XML from structured invoice JSON | [createXinvoiceFromJson](https://rechnungsapi.de/api-docs#createXinvoiceFromJson) |
+| `createZugferdPdf(invoicePdf64, xInvoiceXml)` | Embed an existing X-Invoice XML into a visual PDF | [createZugferdPdfFromXinvoice](https://rechnungsapi.de/api-docs#createZugferdPdfFromXinvoice) |
+| `extractXInvoiceFromZugferd(zugferd64)` | Extract the embedded XRechnung XML from a ZUGFeRD PDF as JSON | [extractXinvoiceFromZugferdToJson](https://rechnungsapi.de/api-docs#extractXInvoiceFromZugferdToJson) |
+| `validateXInvoiceXml(xml)` | Validate an X-Invoice XML against schema and business rules | [validateXinvoiceXml](https://rechnungsapi.de/api-docs#validateXinvoiceXML) |
+| `validateZugferdPdf(zugferdFile64, options?)` | Validate a ZUGFeRD PDF's embedded XML | [validateZugferdPdf](https://rechnungsapi.de/api-docs#validateZugferdPdf) |
+| `analyzePdfInvoice(pdfBase64)` | Extract structured JSON from a PDF/scanned invoice (sync) | [createJSONFromAnalysedPdf](https://rechnungsapi.de/api-docs#createJSONFromAnalysedPdf) |
+| `analyzePdfInvoiceV2(pdfBase64, withLineItems?)` | High-accuracy analyzer, optional line-item extraction | [createJSONFromAnalysedPdf (v2)](https://rechnungsapi.de/api-docs#createJSONFromAnalysedPdfV2) |
+| `analyzePdfInvoiceAsync(pdfBase64, withLineItems?)` / `getAnalysisStatus(jobId)` | Async analysis for large files | [submit](https://rechnungsapi.de/api-docs#createJSONFromAnalysedPdfAsync) / [status](https://rechnungsapi.de/api-docs#rechnungsapiInvoiceAsyncStatus) |
+| `createZugferdFromPdf(pdfBase64, fileName?)` | Convert a PDF/scan directly into a validated ZUGFeRD PDF | [createZugferdFromPdf](https://rechnungsapi.de/api-docs#createZugferdFromPdf) |
 
-Errors are thrown as `RechnungsApiError` (with `.status` and `.body`), or `ValidationFailedError` for HTTP 412 responses (missing mandatory invoice fields).
+Errors are thrown as `RechnungsApiError` (with `.status` and `.body`), or `ValidationFailedError` for HTTP 412 responses (missing mandatory invoice fields). What each status code means is described under [Errors](https://rechnungsapi.de/api-docs#errors) in the API documentation.
 
 ## Development
 
