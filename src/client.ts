@@ -41,7 +41,7 @@ export class RechnungsApiClient {
     }
     this.apiToken = options.apiToken
     this.baseUrl = withTrailingSlash(options.baseUrl ?? DEFAULT_BASE_URL)
-    this.v2BaseUrl = options.v2BaseUrl ?? DEFAULT_V2_BASE_URL
+    this.v2BaseUrl = (options.v2BaseUrl ?? DEFAULT_V2_BASE_URL).replace(/\/+$/, "")
     this.fetchImpl = options.fetch ?? fetch
   }
 
@@ -215,7 +215,8 @@ export class RechnungsApiClient {
 
   private async handleResponse(response: Response): Promise<unknown> {
     if (response.ok) {
-      return this.safeJson(response) ?? { success: true }
+      const data = await this.safeJson(response)
+      return data ?? { success: true }
     }
 
     const data = await this.safeJson(response)
