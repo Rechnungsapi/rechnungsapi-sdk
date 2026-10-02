@@ -30,6 +30,15 @@ describe("this package presents itself as RechnungsAPI (rechnungsapi.de)", () =>
     expect(readme).toContain("support@rechnungsapi.de")
   })
 
+  it("shows a banner that really exists in the repository", () => {
+    const match = readme.match(/raw\.githubusercontent\.com\/Rechnungsapi\/rechnungsapi-sdk\/main\/(assets\/[^"')\s]+)/)
+    expect(match, "the README should reference its banner image").not.toBeNull()
+    const svg = read(match![1])
+    expect(svg).toContain("<svg")
+    expect(svg).toContain("RechnungsAPI")
+    expect(svg).not.toMatch(/x-?invoice/i)
+  })
+
   it("does not name a company or legal entity anywhere a reader can see", () => {
     // The package is presented as RechnungsAPI (rechnungsapi.de) only.
     const visible = [pkg.description, JSON.stringify(pkg.author), visibleText(readme), read("LICENSE")].join("\n")
