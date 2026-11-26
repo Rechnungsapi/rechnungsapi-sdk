@@ -112,6 +112,7 @@ Prefer to let your AI assistant do the work? [`rechnungsapi-mcp`](https://www.np
 |---|---|---|
 | `createZugferdFromJson(invoice, invoicePdf64, options?)` | Create a ZUGFeRD PDF/A-3 from structured invoice JSON | [docs](https://rechnungsapi.de/api-docs#createZugferdFromJson) |
 | `createXRechnungFromJson(invoice, options?)` | Create an XRechnung XML from structured invoice JSON | [docs](https://rechnungsapi.de/api-docs#createXinvoiceFromJson) |
+| `createInvoicePdfFromJson(invoice, templateId, options?)` | Create a ZUGFeRD invoice PDF from invoice JSON with one of your own templates; `idempotencyKey` makes retries safe | [docs](https://rechnungsapi.de/api-docs#createInvoicePdfFromJson) |
 | `createZugferdPdf(invoicePdf64, xrechnungXml)` | Embed an existing XRechnung XML into a visual PDF | [docs](https://rechnungsapi.de/api-docs#createZugferdPdfFromXinvoice) |
 | `extractXRechnungFromZugferd(zugferd64)` | Extract the embedded XRechnung XML from a ZUGFeRD PDF as JSON | [docs](https://rechnungsapi.de/api-docs#extractXInvoiceFromZugferdToJson) |
 | `validateXRechnungXml(xml)` | Validate an XRechnung XML against schema and business rules | [docs](https://rechnungsapi.de/api-docs#validateXinvoiceXML) |
@@ -120,6 +121,8 @@ Prefer to let your AI assistant do the work? [`rechnungsapi-mcp`](https://www.np
 | `analyzePdfInvoiceV2(pdfBase64, withLineItems?)` | High-accuracy analyzer, optional line-item extraction | [docs](https://rechnungsapi.de/api-docs#createJSONFromAnalysedPdfV2) |
 | `analyzePdfInvoiceAsync(pdfBase64, withLineItems?)` / `getAnalysisStatus(jobId)` | Async analysis for large files | [submit](https://rechnungsapi.de/api-docs#createJSONFromAnalysedPdfAsync) / [status](https://rechnungsapi.de/api-docs#rechnungsapiInvoiceAsyncStatus) |
 | `createZugferdFromPdf(pdfBase64, fileName?)` | Convert a PDF/scan directly into a validated ZUGFeRD PDF | [docs](https://rechnungsapi.de/api-docs#createZugferdFromPdf) |
+| `sendEmail(email)` | Send a standalone email (with attachments and `{placeholders}`), independent of creating an invoice | [docs](https://rechnungsapi.de/api-docs#delivery) |
+| `resendEmail(resendToken)` | Resend an earlier email without generating the document again | [docs](https://rechnungsapi.de/api-docs#sendEmailWithZugferdData) |
 
 Errors are thrown as `RechnungsApiError` (with `.status` and `.body`), or `ValidationFailedError` for HTTP 412 responses (missing mandatory invoice fields). What each status code means is described under [Errors](https://rechnungsapi.de/api-docs#errors) in the API documentation.
 

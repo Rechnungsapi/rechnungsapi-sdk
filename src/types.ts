@@ -8,6 +8,38 @@ export interface CreateOptions {
   transport?: TransportOptions
 }
 
+export interface CreateInvoicePdfOptions extends CreateOptions {
+  /** Custom file name for the generated PDF (also used for the email attachment when `transport` is set). */
+  invoiceFilename?: string
+  /**
+   * The API defaults to `true`: the document is only returned in the response and not stored. Set `false` to
+   * also store it, so it can be viewed and downloaded from the invoice list in your account later.
+   */
+  invoicePassthrough?: boolean
+  /**
+   * Sent as the `Idempotency-Key` request header (any unique string, e.g. a UUID). Resending the same key with an
+   * identical body within 24 hours replays the first response instead of generating a new invoice, and uses no
+   * credits. The same key with a different body is rejected with 409.
+   */
+  idempotencyKey?: string
+}
+
+/** The mail to send with {@link RechnungsApiClient.sendEmail}. Recipients are comma-separated for several addresses. */
+export interface DeliveryEmail {
+  sender: string
+  senderName?: string
+  receiver: string
+  cc?: string
+  bcc?: string
+  /** Subject. Supports `{placeholders}` filled from `content`. */
+  subject: string
+  /** Body as plain text or full HTML. Supports `{placeholders}` filled from `content`. */
+  message: string
+  /** Key-value pairs that fill the placeholders in `subject` and `message`, e.g. `{ invoicedate: "02.09.2026" }`. */
+  content?: Record<string, string>
+  attachments?: Array<{ fileName: string; fileBase64: string }>
+}
+
 export interface ValidateZugferdPdfOptions {
   /** When true, cross-checks the embedded XML against the visual PDF content. */
   comparePDF2XML?: boolean

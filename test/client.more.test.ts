@@ -40,6 +40,22 @@ const endpointCases: Case[] = [
   { name: "createZugferdFromJson", call: (c) => c.createZugferdFromJson({ n: 1 }, "pdf64"), url: `${GATEWAY}/createZugferdFromJson`, body: { invoice: { n: 1 }, invoicePdf64: "pdf64" } },
   { name: "createZugferdFromJson with transport", call: (c) => c.createZugferdFromJson({ n: 1 }, "pdf64", { transport: { to: "a@b.c" } }), url: `${GATEWAY}/createZugferdFromJson`, body: { invoice: { n: 1 }, invoicePdf64: "pdf64", transport: { to: "a@b.c" } } },
   { name: "createXRechnungFromJson", call: (c) => c.createXRechnungFromJson({ n: 1 }), url: `${GATEWAY}/createXinvoiceFromJson`, body: { invoice: { n: 1 } } },
+  { name: "createInvoicePdfFromJson, only the required fields", call: (c) => c.createInvoicePdfFromJson({ n: 1 }, "tpl-1"), url: `${GATEWAY}/createInvoicePdfFromJson`, body: { invoice: { n: 1 }, templateId: "tpl-1" } },
+  {
+    name: "createInvoicePdfFromJson with every option (an explicit false is still sent)",
+    call: (c) =>
+      c.createInvoicePdfFromJson({ n: 1 }, "tpl-1", { invoiceFilename: "re-1.pdf", invoicePassthrough: false, transport: { type: "email" } }),
+    url: `${GATEWAY}/createInvoicePdfFromJson`,
+    body: { invoice: { n: 1 }, templateId: "tpl-1", invoiceFilename: "re-1.pdf", invoicePassthrough: false, transport: { type: "email" } },
+  },
+  {
+    name: "sendEmail wraps the mail in an email transport that is switched on",
+    call: (c) => c.sendEmail({ sender: "a@x.de", receiver: "b@y.de", subject: "Hi {name}", message: "Text", content: { name: "Max" } }),
+    // not under /zugferd: the delivery routes sit directly under /api/v1
+    url: "https://api.rechnungsapi.de/api/v1/delivery",
+    body: { transport: { type: "email", useTransport: true, email: { sender: "a@x.de", receiver: "b@y.de", subject: "Hi {name}", message: "Text", content: { name: "Max" } } } },
+  },
+  { name: "resendEmail", call: (c) => c.resendEmail("tok-abc"), url: "https://api.rechnungsapi.de/api/v1/sendEmailWithZugferdData", body: { resendToken: "tok-abc" } },
   { name: "createZugferdPdf", call: (c) => c.createZugferdPdf("pdf64", "<x/>"), url: `${GATEWAY}/createZugferdPdfFromXinvoice`, body: { invoicePdf64: "pdf64", xInvoiceXml: "<x/>" } },
   { name: "extractXRechnungFromZugferd", call: (c) => c.extractXRechnungFromZugferd("z64"), url: `${GATEWAY}/extractXinvoiceFromZugferdToJson`, body: { zugferd64: "z64" } },
   { name: "validateXRechnungXml", call: (c) => c.validateXRechnungXml("<x/>"), url: `${GATEWAY}/validateXinvoiceXml`, body: { xinvoiceXML: "<x/>" } },
@@ -108,6 +124,70 @@ describe("URL handling", () => {
 
   it("refuses to be constructed without a token", () => {
     expect(() => new RechnungsApiClient({ apiToken: "" })).toThrow(/apiToken/)
+  })
+})
+
+describe("createInvoicePdfFromJson and the Idempotency-Key header", () => {
+  it("sends the key as a request header, never inside the JSON body", async () => {
+    const { client, last } = setup(json({ message: "invoice and pdf created" }))
+    await client.createInvoicePdfFromJson({ n: 1 }, "tpl-1", { idempotencyKey: "key-123" })
+    expect(last().headers["Idempotency-Key"]).toBe("key-123")
+    expect(last().headers.Authorization).toBe("Bearer tok_123")
+    expect(last().body).toEqual({ invoice: { n: 1 }, templateId: "tpl-1" })
+  })
+
+  it("sends no Idempotency-Key header when none is given", async () => {
+    const { client, last } = setup(json({}))
+    await client.createInvoicePdfFromJson({ n: 1 }, "tpl-1")
+    expect(Object.keys(last().headers)).not.toContain("Idempotency-Key")
+  })
+
+  it("reports the 409 for a key reused with a different body", async () => {
+    const { client } = setup(json({ message: "Idempotency key exists with different content." }, { status: 409 }))
+    const err = await client.createInvoicePdfFromJson({ n: 2 }, "tpl-1", { idempotencyKey: "key-123" }).catch((e) => e)
+    expect(err).toBeInstanceOf(RechnungsApiError)
+    expect(err.status).toBe(409)
+    expect(err.message).toBe("Idempotency key exists with different content.")
+  })
+
+  it("maps 412 (missing mandatory fields) to ValidationFailedError like the other create methods", async () => {
+    const { client } = setup(json({ message: "mandatory fields missing" }, { status: 412 }))
+    await expect(client.createInvoicePdfFromJson({}, "tpl-1")).rejects.toBeInstanceOf(ValidationFailedError)
+  })
+})
+
+describe("sendEmail and resendEmail", () => {
+  const mail = { sender: "a@x.de", receiver: "b@y.de", subject: "s", message: "m" }
+
+  it("returns the resendToken the API answers with", async () => {
+    const { client } = setup(json({ message: "email sent", resendToken: "R1" }))
+    await expect(client.sendEmail(mail)).resolves.toEqual({ message: "email sent", resendToken: "R1" })
+  })
+
+  it("passes attachments and recipients through untouched", async () => {
+    const { client, last } = setup(json({}))
+    const attachments = [{ fileName: "a.pdf", fileBase64: "QUJD" }]
+    await client.sendEmail({ ...mail, receiver: "b@y.de, c@y.de", cc: "d@y.de", bcc: "e@y.de", senderName: "Firma", attachments })
+    expect(last().body.transport.email).toEqual({ ...mail, receiver: "b@y.de, c@y.de", cc: "d@y.de", bcc: "e@y.de", senderName: "Firma", attachments })
+  })
+
+  it("reports 403 when the email add-on is not booked", async () => {
+    const { client } = setup(json({ message: "service not ordered" }, { status: 403 }))
+    const err = await client.sendEmail(mail).catch((e) => e)
+    expect(err).toBeInstanceOf(RechnungsApiError)
+    expect(err.status).toBe(403)
+    expect(err.message).toBe("service not ordered")
+  })
+
+  it.each([
+    [403, "invalid token"],
+    [404, "token not found"],
+  ])("resendEmail reports %i %s", async (status, message) => {
+    const { client } = setup(json({ message }, { status }))
+    const err = await client.resendEmail("bad").catch((e) => e)
+    expect(err).toBeInstanceOf(RechnungsApiError)
+    expect(err.status).toBe(status)
+    expect(err.message).toBe(message)
   })
 })
 

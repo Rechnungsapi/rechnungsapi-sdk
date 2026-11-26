@@ -1,6 +1,6 @@
 {
   "name": "rechnungsapi-sdk",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Official TypeScript/JavaScript SDK for RechnungsAPI (rechnungsapi.de), the ZUGFeRD & XRechnung API: create, validate and analyze e-invoices.",
   "license": "MIT",
   "author": {

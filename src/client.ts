@@ -2,7 +2,9 @@ import { RechnungsApiError, ValidationFailedError, type ZugferdFromPdfErrorBody 
 import type {
   AsyncPdfStatusResult,
   AsyncPdfSubmitResult,
+  CreateInvoicePdfOptions,
   CreateOptions,
+  DeliveryEmail,
   InvoiceJson,
   ValidateZugferdPdfOptions,
   XRechnungValidationResult,
@@ -78,6 +80,46 @@ export class RechnungsApiClient {
       invoice,
       ...(options.transport ? { transport: options.transport } : {}),
     })
+  }
+
+  /**
+   * Create a ZUGFeRD invoice PDF from structured invoice JSON using one of your own invoice templates
+   * (`templateId`). The response carries the PDF as base64 (`filecontentB64`) unless it is stored, see
+   * `invoicePassthrough`. Pass `idempotencyKey` to make retries safe.
+   */
+  async createInvoicePdfFromJson(
+    invoice: InvoiceJson,
+    templateId: string,
+    options: CreateInvoicePdfOptions = {},
+  ): Promise<unknown> {
+    return this.callGateway(
+      "api/v1/zugferd/createInvoicePdfFromJson",
+      {
+        invoice,
+        templateId,
+        ...(options.invoiceFilename !== undefined ? { invoiceFilename: options.invoiceFilename } : {}),
+        ...(options.invoicePassthrough !== undefined ? { invoicePassthrough: options.invoicePassthrough } : {}),
+        ...(options.transport ? { transport: options.transport } : {}),
+      },
+      options.idempotencyKey ? { "Idempotency-Key": options.idempotencyKey } : {},
+    )
+  }
+
+  /**
+   * Send a standalone email, independent of creating an invoice. Needs the email delivery add-on on your account.
+   * The SDK sets `transport.type` to `"email"` and `transport.useTransport` to `true`. The response carries a
+   * `resendToken` for {@link resendEmail}.
+   */
+  async sendEmail(email: DeliveryEmail): Promise<unknown> {
+    return this.callGateway("api/v1/delivery", { transport: { type: "email", useTransport: true, email } })
+  }
+
+  /**
+   * Resend an email that was sent before, to the original recipients, without generating the document again. Takes the
+   * `resendToken` from the response of a create call that used `transport`, or of {@link sendEmail}.
+   */
+  async resendEmail(resendToken: string): Promise<unknown> {
+    return this.callGateway("api/v1/sendEmailWithZugferdData", { resendToken })
   }
 
   /** Embed an existing XRechnung XML into a visual PDF to produce a ZUGFeRD PDF. */
@@ -228,10 +270,10 @@ export class RechnungsApiClient {
     }
   }
 
-  private async callGateway(path: string, body: unknown): Promise<unknown> {
+  private async callGateway(path: string, body: unknown, extraHeaders: Record<string, string> = {}): Promise<unknown> {
     const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", ...this.authHeaders() },
+      headers: { "Content-Type": "application/json", ...this.authHeaders(), ...extraHeaders },
       body: JSON.stringify(body),
     })
     return this.handleResponse(response)
